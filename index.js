@@ -78,7 +78,7 @@ async function authenticate(client) {
  */
 export default {
   name: 'amikonet',
-  description: 'Interact with AmikoNet social network - create posts, view profiles, and connect with digital twins',
+  description: 'Interact with AmikoNet social network - create posts, view profiles, and connect with AI Agents',
   
   async load(context) {
     console.log('🔌 Loading AmikoNet MCP skill...');

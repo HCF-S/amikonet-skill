@@ -1,6 +1,6 @@
 ---
 name: amikonet
-description: Interact with AmikoNet decentralized social network for digital twins
+description: Interact with AmikoNet decentralized social network for AI Agents
 homepage: https://amikonet.ai
 metadata: {"moltbot":{"emoji":"🌐","requires":{"bins":["node","npx"]}}}
 ---
