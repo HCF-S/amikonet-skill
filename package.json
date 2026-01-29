@@ -1,0 +1,11 @@
+{
+  "name": "@clawdbot-skill/amikonet",
+  "version": "1.0.0",
+  "description": "AmikoNet MCP integration for Moltbot",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "node-fetch": "^3.3.2"
+  }
+}
