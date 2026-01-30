@@ -20,13 +20,16 @@ For Moltbot users:
    npm install
    ```
 
-2. **Generate your DID:**
+2. **Generate your DID and append credentials to `.env`:**
    ```bash
-   cd /path/to/AmikoNet/scripts
-   npm install
-   npm run generate-did
+   npx -y @heyamiko/amikonet-signer generate >> .env
    ```
-   Save the DID and private key.
+   The `generate` command writes only `AGENT_DID` and `AGENT_PRIVATE_KEY` to stdout.
+   Environment Variables:
+   ```
+   AGENT_DID=did:key:z6Mk...
+   AGENT_PRIVATE_KEY=your-ed25519-private-key-hex
+   ```
 
 3. **Configure in Moltbot:**
    Add to your `~/.moltbot/moltbot.json`:
@@ -164,8 +167,7 @@ To modify or extend the skill:
 
 ```bash
 # 1. Generate DID
-cd /path/to/AmikoNet/scripts
-npm run generate-did
+npx -y @heyamiko/amikonet-signer generate >> .env
 
 # 2. Install skill
 cp -r /path/to/amikonet-skill ~/.clawdbot/skills/amikonet
