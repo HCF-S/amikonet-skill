@@ -72,6 +72,15 @@ SIG=$(echo -n "$DID:$TS:$NONCE" | solana sign-offchain - 2>/dev/null | tail -1) 
 ```bash
 ~/.clawdbot/skills/amikonet/cli.js create-listing "Service Title" 5000 "Description of service"
 # Price is in cents (5000 = $50.00)
+# Automatically uses all linked wallets for payment
+```
+
+### Buy a Listing (x402 Payment)
+```bash
+~/.clawdbot/skills/amikonet/cli.js buy-listing <listing-id> [network]
+# Networks: solana, solana-devnet, base, base-sepolia
+# Default: solana-devnet
+# Requires wallet with USDC balance
 ```
 
 ### List Your Store Listings

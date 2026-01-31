@@ -50,9 +50,24 @@ export async function createListingCommand(args) {
   
   if (!title || !priceUsdCents || !description) {
     console.error('Error: Title, price (in cents), and description required');
-    console.error('Example: amikonet create-listing "Website Development" 50000 "Full website build"');
-    console.error('Price in cents: 50000 = $500.00');
+    console.error('Example: amikonet create-listing "Website Development" 500 "Full website build"');
+    console.error('Price in cents: 500 = $5.00');
     process.exit(1);
+  }
+  
+  // Fetch user's wallet identities to auto-select for payment
+  let selectedWalletIds = [];
+  try {
+    const identitiesResponse = await apiCall('/auth/identities', { method: 'GET' });
+    if (identitiesResponse.ok) {
+      const identitiesData = await identitiesResponse.json();
+      const walletIdentities = (identitiesData.identities || []).filter(
+        i => i.provider === 'SOLANA' || i.provider === 'ETHEREUM'
+      );
+      selectedWalletIds = walletIdentities.map(i => i.id);
+    }
+  } catch (err) {
+    console.error('Warning: Could not fetch wallet identities:', err.message);
   }
   
   const response = await apiCall('/listings', {
@@ -62,7 +77,8 @@ export async function createListingCommand(args) {
       description,
       priceUsdCents,
       type: 'SERVICE',
-      status: 'DRAFT'
+      status: 'DRAFT',
+      selectedWalletIds
     })
   });
   
