@@ -70,9 +70,14 @@ async function loadToken() {
 }
 
 async function createSignerClient() {
+  // Use local signer if AMIKONET_SIGNER_PATH is set, otherwise use npx
+  const signerPath = process.env.AMIKONET_SIGNER_PATH;
+  const command = signerPath ? 'node' : 'npx';
+  const args = signerPath ? [signerPath] : ['-y', '@heyamiko/amikonet-signer'];
+  
   const transport = new StdioClientTransport({
-    command: 'npx',
-    args: ['-y', '@heyamiko/amikonet-signer'],
+    command,
+    args,
     env: {
       ...process.env,
       AGENT_DID,
@@ -244,7 +249,7 @@ async function showHelp() {
   console.log('  update-listing <id> <json>             Update listing');
   console.log('  delete-listing <id>       Delete listing');
   console.log('  search-listings <query>   Search marketplace');
-  console.log('  buy-listing <id>          Purchase a listing');
+  console.log('  buy-listing <id> [network]  Purchase listing with x402 (default: solana-devnet)');
   console.log('  purchases [status]        Your purchases');
   console.log('  sales [status]            Your sales');
   console.log('');
@@ -1197,29 +1202,110 @@ async function main() {
 
       case 'buy-listing': {
         const listingId = args[0];
-        const network = args[1] || 'SOLANA';
+        const preferredNetwork = args[1] || 'solana-devnet';
         
         if (!listingId) {
           console.error('Error: Listing ID required');
-          console.error('Example: amikonet buy-listing abc-123 SOLANA');
+          console.error('Example: amikonet buy-listing abc-123 solana-devnet');
+          console.error('Networks: solana, solana-devnet, base, base-sepolia');
           process.exit(1);
         }
         
-        const response = await apiCall(`/listings/${listingId}/buy`, {
-          method: 'POST',
-          body: JSON.stringify({
-            network
-          })
+        console.error('💰 Initiating x402 payment flow...');
+        
+        // Step 1: Get payment requirements (402 response)
+        const requirementsResponse = await apiCall(`/listings/${listingId}/buy`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
         });
         
-        if (!response.ok) {
-          const error = await response.text();
-          throw new Error(`Failed to initiate purchase: ${error}`);
+        if (requirementsResponse.status !== 402) {
+          if (requirementsResponse.ok) {
+            // Already paid or no payment needed
+            const data = await requirementsResponse.json();
+            console.log(JSON.stringify(data, null, 2));
+            break;
+          }
+          const error = await requirementsResponse.text();
+          throw new Error(`Failed to get payment requirements: ${error}`);
         }
         
-        const data = await response.json();
-        console.log(JSON.stringify(data, null, 2));
-        console.error(`Order created. Status: ${data.order?.status}`);
+        const requirementsData = await requirementsResponse.json();
+        const paymentRequirements = requirementsData.accepts;
+        
+        if (!paymentRequirements || paymentRequirements.length === 0) {
+          throw new Error('No payment requirements returned');
+        }
+        
+        // Find matching network or use first available
+        let selectedRequirement = paymentRequirements.find(r => r.network === preferredNetwork);
+        if (!selectedRequirement) {
+          selectedRequirement = paymentRequirements[0];
+          console.error(`⚠️  Network ${preferredNetwork} not available, using ${selectedRequirement.network}`);
+        }
+        
+        console.error(`📋 Payment requirements:`);
+        console.error(`   Network: ${selectedRequirement.network}`);
+        console.error(`   Amount: ${selectedRequirement.maxAmountRequired} (atomic units)`);
+        console.error(`   Pay to: ${selectedRequirement.payTo}`);
+        console.error(`   Asset: ${selectedRequirement.asset}`);
+        
+        // Step 2: Create payment using signer MCP (uses @heyamiko/x402 internally)
+        console.error('🔐 Creating payment signature...');
+        const signerClient = await createSignerClient();
+        
+        try {
+          // Call the signer to create x402 payment
+          // The signer uses @heyamiko/x402 to create and sign the transaction
+          const paymentResult = await signerClient.callTool({
+            name: 'create_x402_payment',
+            arguments: {
+              paymentRequirements: selectedRequirement
+            }
+          });
+          
+          let paymentData;
+          if (paymentResult.content && Array.isArray(paymentResult.content)) {
+            const textContent = paymentResult.content.find(c => c.type === 'text');
+            if (textContent) {
+              paymentData = JSON.parse(textContent.text);
+            }
+          }
+          
+          if (!paymentData || !paymentData.success || !paymentData.paymentHeader) {
+            console.error('Payment creation result:', JSON.stringify(paymentResult, null, 2));
+            throw new Error('Failed to create payment: ' + (paymentData?.error || 'Unknown error'));
+          }
+          
+          console.error('✅ Payment signature created');
+          
+          // Step 3: Submit payment
+          console.error('📤 Submitting payment...');
+          
+          const paymentHeader = paymentData.paymentHeader;
+          
+          const purchaseResponse = await apiCall(`/listings/${listingId}/buy`, {
+            method: 'GET',
+            headers: {
+              'X-PAYMENT': paymentHeader,
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (!purchaseResponse.ok) {
+            const error = await purchaseResponse.text();
+            throw new Error(`Payment failed: ${error}`);
+          }
+          
+          const purchaseData = await purchaseResponse.json();
+          console.log(JSON.stringify(purchaseData, null, 2));
+          console.error(`✅ Purchase complete! Order ID: ${purchaseData.order?.id}`);
+          
+        } finally {
+          await signerClient.close();
+        }
         break;
       }
 
