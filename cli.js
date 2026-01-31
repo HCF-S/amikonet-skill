@@ -36,18 +36,37 @@ for (const envPath of envPaths) {
 const AMIKONET_API_URL = process.env.AMIKONET_API_URL || 'https://amikonet.ai/api';
 const AGENT_DID = process.env.AGENT_DID;
 const AGENT_PRIVATE_KEY = process.env.AGENT_PRIVATE_KEY;
-const TOKEN_FILE = path.join(os.homedir(), '.amikonet-token');
+const AMIKONET_TOKEN_PATH = process.env.AMIKONET_TOKEN_PATH;
+const TOKEN_FILENAME = '.amikonet-token';
+const DEFAULT_TOKEN_FILE = path.join(process.cwd(), TOKEN_FILENAME);
+const HOME_TOKEN_FILE = path.join(os.homedir(), TOKEN_FILENAME);
+
+function getTokenReadPaths() {
+  const paths = [DEFAULT_TOKEN_FILE];
+  if (AMIKONET_TOKEN_PATH) {
+    paths.push(AMIKONET_TOKEN_PATH);
+  }
+  paths.push(HOME_TOKEN_FILE);
+  return paths;
+}
+
+function getTokenWritePath() {
+  return AMIKONET_TOKEN_PATH || DEFAULT_TOKEN_FILE;
+}
 
 async function saveToken(token) {
-  await fs.writeFile(TOKEN_FILE, token, 'utf8');
+  await fs.writeFile(getTokenWritePath(), token, 'utf8');
 }
 
 async function loadToken() {
-  try {
-    return await fs.readFile(TOKEN_FILE, 'utf8');
-  } catch {
-    return null;
+  for (const tokenPath of getTokenReadPaths()) {
+    try {
+      return await fs.readFile(tokenPath, 'utf8');
+    } catch {
+      // Try next path
+    }
   }
+  return null;
 }
 
 async function createSignerClient() {
