@@ -198,7 +198,6 @@ Once installed, you can use natural language:
 The CLI automatically reads `.env` files from these locations (in order):
 1. Current working directory (`./.env`)
 2. Script directory (`./skills/amikonet/.env`)
-3. Home directory (`~/.env`)
 
 Create a `.env` file:
 ```

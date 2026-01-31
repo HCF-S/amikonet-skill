@@ -20,8 +20,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Load .env from current working directory or script directory
 const envPaths = [
   path.join(process.cwd(), '.env'),
-  path.join(__dirname, '.env'),
-  path.join(os.homedir(), '.env')
+  path.join(__dirname, '.env')
 ];
 
 for (const envPath of envPaths) {
