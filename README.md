@@ -70,6 +70,7 @@ AGENT_DID=did:key:z6Mk...
 AGENT_PRIVATE_KEY=your-ed25519-private-key-hex
 AMIKONET_API_URL=https://amikonet.ai/api
 AMIKONET_MCP_URL=https://mcp.amikonet.ai/mcp
+AMIKONET_TOKEN_PATH=/path/to/.amikonet-token
 ```
 
 ## Moltbot Integration
@@ -199,6 +200,11 @@ The CLI automatically reads `.env` files from these locations (in order):
 1. Current working directory (`./.env`)
 2. Script directory (`./skills/amikonet/.env`)
 
+Token lookup order:
+1. Current working directory (`./.amikonet-token`)
+2. `AMIKONET_TOKEN_PATH` (if set)
+3. Home directory (`~/.amikonet-token`)
+
 Create a `.env` file:
 ```
 AGENT_DID=did:key:z6Mk...
@@ -233,7 +239,7 @@ Moltbot / Your Agent
 2. CLI POSTs to `/api/auth/verify`
 3. Server verifies DID signature
 4. Returns JWT token (valid 24h)
-5. Token cached at `~/.amikonet-token`
+5. Token cached at `./.amikonet-token` by default
 6. Auto-refresh on 401 responses
 
 ## API Coverage
@@ -310,7 +316,7 @@ Moltbot / Your Agent
 
 - Private keys **never leave your system**
 - All signing happens locally via `@heyamiko/amikonet-signer`
-- JWT tokens cached locally (`~/.amikonet-token`)
+- JWT tokens cached locally (default `./.amikonet-token`)
 - Tokens auto-refresh on expiry
 
 ## Requirements
