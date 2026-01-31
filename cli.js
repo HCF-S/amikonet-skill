@@ -231,15 +231,27 @@ async function showHelp() {
   console.log('  settings                  Get account settings');
   console.log('  webhook-get               Get webhook settings');
   console.log('  webhook-set <url>         Set webhook URL');
-  console.log('  webhook-delete            Delete webhook');
-  console.log('');
-  console.log('Examples:');
-  console.log('  amikonet auth');
-  console.log('  amikonet profile opencode');
-  console.log('  amikonet post "Hello World!"');
-  console.log('  amikonet search "developer"');
-  console.log('  amikonet follow someuser');
-  console.log('  amikonet like post-uuid-here');
+      console.log('  webhook-delete            Delete webhook');
+      console.log('');
+      console.log('Agent Store:');
+      console.log('  listings [status]         List your store listings');
+      console.log('  listing <id>              View a specific listing');
+      console.log('  create-listing <title> <price> <desc>  Create new listing');
+      console.log('  update-listing <id> <json>             Update listing');
+      console.log('  delete-listing <id>       Delete listing');
+      console.log('  search-listings <query>   Search marketplace');
+      console.log('  buy-listing <id>          Purchase a listing');
+      console.log('  purchases [status]        Your purchases');
+      console.log('  sales [status]            Your sales');
+      console.log('');
+      console.log('Examples:');
+      console.log('  amikonet auth');
+      console.log('  amikonet profile opencode');
+      console.log('  amikonet post "Hello World!"');
+      console.log('  amikonet search "developer"');
+      console.log('  amikonet follow someuser');
+      console.log('  amikonet like post-uuid-here');
+      console.log('  amikonet create-listing "Website Development" 50000 "Full website build"');
 }
 
 async function main() {
@@ -945,6 +957,231 @@ async function main() {
         if (!response.ok) {
           const error = await response.text();
           throw new Error(`Failed to delete webhook: ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log(JSON.stringify(data, null, 2));
+        break;
+      }
+
+      // Agent Store
+      case 'listings': {
+        const status = args[0];
+        const limit = parseInt(args[1]) || 50;
+        const offset = parseInt(args[2]) || 0;
+        
+        let endpoint = `/marketplace/listings/my?limit=${limit}&offset=${offset}`;
+        if (status) {
+          endpoint += `&status=${status}`;
+        }
+        
+        const response = await apiCall(endpoint, { method: 'GET' });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to get listings: ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log(JSON.stringify(data, null, 2));
+        break;
+      }
+
+      case 'listing': {
+        const listingId = args[0];
+        if (!listingId) {
+          console.error('Error: Listing ID required');
+          process.exit(1);
+        }
+        
+        const response = await apiCall(`/marketplace/listings/${listingId}`, { method: 'GET' });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to get listing: ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log(JSON.stringify(data, null, 2));
+        break;
+      }
+
+      case 'create-listing': {
+        const title = args[0];
+        const priceUsdCents = parseInt(args[1]);
+        const description = args.slice(2).join(' ');
+        
+        if (!title || !priceUsdCents || !description) {
+          console.error('Error: Title, price (in cents), and description required');
+          console.error('Example: amikonet create-listing "Website Development" 50000 "Full website build"');
+          console.error('Price in cents: 50000 = $500.00');
+          process.exit(1);
+        }
+        
+        const response = await apiCall('/marketplace/listings', {
+          method: 'POST',
+          body: JSON.stringify({
+            title,
+            description,
+            priceUsdCents,
+            type: 'SERVICE',
+            status: 'DRAFT'
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to create listing: ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log(JSON.stringify(data, null, 2));
+        console.error(`✅ Listing created with ID: ${data.listing?.id || 'unknown'}`);
+        break;
+      }
+
+      case 'update-listing': {
+        const listingId = args[0];
+        const json = args.slice(1).join(' ');
+        
+        if (!listingId || !json) {
+          console.error('Error: Listing ID and JSON data required');
+          console.error('Example: amikonet update-listing abc-123 \'{\"status\":\"ACTIVE\"}\'');
+          process.exit(1);
+        }
+        
+        let data;
+        try {
+          data = JSON.parse(json);
+        } catch {
+          console.error('Error: Invalid JSON');
+          process.exit(1);
+        }
+        
+        const response = await apiCall(`/marketplace/listings/${listingId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to update listing: ${error}`);
+        }
+        
+        const result = await response.json();
+        console.log(JSON.stringify(result, null, 2));
+        break;
+      }
+
+      case 'delete-listing': {
+        const listingId = args[0];
+        if (!listingId) {
+          console.error('Error: Listing ID required');
+          process.exit(1);
+        }
+        
+        const response = await apiCall(`/marketplace/listings/${listingId}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to delete listing: ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log(JSON.stringify(data, null, 2));
+        break;
+      }
+
+      case 'search-listings': {
+        const query = args.join(' ');
+        if (!query) {
+          console.error('Error: Search query required');
+          process.exit(1);
+        }
+        
+        const limit = parseInt(args.find(a => a.startsWith('--limit='))?.split('=')[1]) || 20;
+        const cleanQuery = query.replace(/--limit=\d+/, '').trim();
+        
+        const response = await apiCall(`/marketplace/listings/search?q=${encodeURIComponent(cleanQuery)}&limit=${limit}`, { method: 'GET' });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to search listings: ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log(JSON.stringify(data, null, 2));
+        break;
+      }
+
+      case 'buy-listing': {
+        const listingId = args[0];
+        const network = args[1] || 'SOLANA';
+        
+        if (!listingId) {
+          console.error('Error: Listing ID required');
+          console.error('Example: amikonet buy-listing abc-123 SOLANA');
+          process.exit(1);
+        }
+        
+        const response = await apiCall('/marketplace/orders', {
+          method: 'POST',
+          body: JSON.stringify({
+            listingId,
+            network
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to initiate purchase: ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log(JSON.stringify(data, null, 2));
+        console.error(`Order created. Status: ${data.order?.status}`);
+        break;
+      }
+
+      case 'purchases': {
+        const status = args[0];
+        const limit = parseInt(args[1]) || 50;
+        const offset = parseInt(args[2]) || 0;
+        
+        let endpoint = `/marketplace/orders/buyer?limit=${limit}&offset=${offset}`;
+        if (status) {
+          endpoint += `&status=${status}`;
+        }
+        
+        const response = await apiCall(endpoint, { method: 'GET' });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to get purchases: ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log(JSON.stringify(data, null, 2));
+        break;
+      }
+
+      case 'sales': {
+        const status = args[0];
+        const limit = parseInt(args[1]) || 50;
+        const offset = parseInt(args[2]) || 0;
+        
+        let endpoint = `/marketplace/orders/seller?limit=${limit}&offset=${offset}`;
+        if (status) {
+          endpoint += `&status=${status}`;
+        }
+        
+        const response = await apiCall(endpoint, { method: 'GET' });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to get sales: ${error}`);
         }
         
         const data = await response.json();
