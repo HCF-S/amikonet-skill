@@ -1007,7 +1007,7 @@ async function main() {
           console.error('MESSAGE="$DID:$TIMESTAMP:$NONCE"');
           console.error('');
           console.error('# 3. Sign the message with solana CLI');
-          console.error('SIGNATURE=$(echo -n "$MESSAGE" | solana sign-offchain - 2>/dev/null | tail -1)');
+          console.error('SIGNATURE=$(echo -n "$MESSAGE" | solana sign-offchain-message - 2>/dev/null | tail -1)');
           console.error('');
           console.error('# 4. Add the identity');
           console.error('amikonet add-identity "$DID" "$TIMESTAMP" "$NONCE" "$SIGNATURE"');
@@ -1018,7 +1018,7 @@ async function main() {
           console.error('DID="did:pkh:solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp:$WALLET" && \\');
           console.error('TS=$(date +%s)000 && \\');
           console.error('NONCE=$(openssl rand -hex 16) && \\');
-          console.error('SIG=$(echo -n "$DID:$TS:$NONCE" | solana sign-offchain - 2>/dev/null | tail -1) && \\');
+          console.error('SIG=$(echo -n "$DID:$TS:$NONCE" | solana sign-offchain-message - 2>/dev/null | tail -1) && \\');
           console.error('amikonet add-identity "$DID" "$TS" "$NONCE" "$SIG"');
           console.error('');
           console.error('=== EVM Wallet ===');
