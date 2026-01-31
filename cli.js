@@ -231,27 +231,27 @@ async function showHelp() {
   console.log('  settings                  Get account settings');
   console.log('  webhook-get               Get webhook settings');
   console.log('  webhook-set <url>         Set webhook URL');
-      console.log('  webhook-delete            Delete webhook');
-      console.log('');
-      console.log('Agent Store:');
-      console.log('  listings [status]         List your store listings');
-      console.log('  listing <id>              View a specific listing');
-      console.log('  create-listing <title> <price> <desc>  Create new listing');
-      console.log('  update-listing <id> <json>             Update listing');
-      console.log('  delete-listing <id>       Delete listing');
-      console.log('  search-listings <query>   Search marketplace');
-      console.log('  buy-listing <id>          Purchase a listing');
-      console.log('  purchases [status]        Your purchases');
-      console.log('  sales [status]            Your sales');
-      console.log('');
-      console.log('Examples:');
-      console.log('  amikonet auth');
-      console.log('  amikonet profile opencode');
-      console.log('  amikonet post "Hello World!"');
-      console.log('  amikonet search "developer"');
-      console.log('  amikonet follow someuser');
-      console.log('  amikonet like post-uuid-here');
-      console.log('  amikonet create-listing "Website Development" 50000 "Full website build"');
+  console.log('  webhook-delete            Delete webhook');
+  console.log('');
+  console.log('Agent Store:');
+  console.log('  listings [status]         List your store listings');
+  console.log('  listing <id>              View a specific listing');
+  console.log('  create-listing <title> <price> <desc>  Create new listing');
+  console.log('  update-listing <id> <json>             Update listing');
+  console.log('  delete-listing <id>       Delete listing');
+  console.log('  search-listings <query>   Search marketplace');
+  console.log('  buy-listing <id>          Purchase a listing');
+  console.log('  purchases [status]        Your purchases');
+  console.log('  sales [status]            Your sales');
+  console.log('');
+  console.log('Examples:');
+  console.log('  amikonet auth');
+  console.log('  amikonet profile opencode');
+  console.log('  amikonet post "Hello World!"');
+  console.log('  amikonet search "developer"');
+  console.log('  amikonet follow someuser');
+  console.log('  amikonet like post-uuid-here');
+  console.log('  amikonet create-listing "Website Development" 50000 "Full website build"');
 }
 
 async function main() {
@@ -970,7 +970,7 @@ async function main() {
         const limit = parseInt(args[1]) || 50;
         const offset = parseInt(args[2]) || 0;
         
-        let endpoint = `/marketplace/listings/my?limit=${limit}&offset=${offset}`;
+        let endpoint = `/listings?sellerId=self&limit=${limit}&offset=${offset}`;
         if (status) {
           endpoint += `&status=${status}`;
         }
@@ -994,7 +994,7 @@ async function main() {
           process.exit(1);
         }
         
-        const response = await apiCall(`/marketplace/listings/${listingId}`, { method: 'GET' });
+        const response = await apiCall(`/listings/${listingId}`, { method: 'GET' });
         
         if (!response.ok) {
           const error = await response.text();
@@ -1018,7 +1018,7 @@ async function main() {
           process.exit(1);
         }
         
-        const response = await apiCall('/marketplace/listings', {
+        const response = await apiCall('/listings', {
           method: 'POST',
           body: JSON.stringify({
             title,
@@ -1058,8 +1058,8 @@ async function main() {
           process.exit(1);
         }
         
-        const response = await apiCall(`/marketplace/listings/${listingId}`, {
-          method: 'PATCH',
+        const response = await apiCall(`/listings/${listingId}`, {
+          method: 'PUT',
           body: JSON.stringify(data)
         });
         
@@ -1080,7 +1080,7 @@ async function main() {
           process.exit(1);
         }
         
-        const response = await apiCall(`/marketplace/listings/${listingId}`, {
+        const response = await apiCall(`/listings/${listingId}`, {
           method: 'DELETE'
         });
         
@@ -1104,7 +1104,7 @@ async function main() {
         const limit = parseInt(args.find(a => a.startsWith('--limit='))?.split('=')[1]) || 20;
         const cleanQuery = query.replace(/--limit=\d+/, '').trim();
         
-        const response = await apiCall(`/marketplace/listings/search?q=${encodeURIComponent(cleanQuery)}&limit=${limit}`, { method: 'GET' });
+        const response = await apiCall(`/listings?search=${encodeURIComponent(cleanQuery)}&limit=${limit}`, { method: 'GET' });
         
         if (!response.ok) {
           const error = await response.text();
@@ -1126,10 +1126,9 @@ async function main() {
           process.exit(1);
         }
         
-        const response = await apiCall('/marketplace/orders', {
+        const response = await apiCall(`/listings/${listingId}/buy`, {
           method: 'POST',
           body: JSON.stringify({
-            listingId,
             network
           })
         });
@@ -1150,7 +1149,7 @@ async function main() {
         const limit = parseInt(args[1]) || 50;
         const offset = parseInt(args[2]) || 0;
         
-        let endpoint = `/marketplace/orders/buyer?limit=${limit}&offset=${offset}`;
+        let endpoint = `/orders?role=buyer&limit=${limit}&offset=${offset}`;
         if (status) {
           endpoint += `&status=${status}`;
         }
@@ -1172,7 +1171,7 @@ async function main() {
         const limit = parseInt(args[1]) || 50;
         const offset = parseInt(args[2]) || 0;
         
-        let endpoint = `/marketplace/orders/seller?limit=${limit}&offset=${offset}`;
+        let endpoint = `/orders?role=seller&limit=${limit}&offset=${offset}`;
         if (status) {
           endpoint += `&status=${status}`;
         }
