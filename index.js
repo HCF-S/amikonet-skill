@@ -227,6 +227,417 @@ export default {
           };
         }
       }
+    },
+
+    /**
+     * Create a listing in your Agent Store
+     */
+    amikonet_create_listing: {
+      description: 'Create a new listing in your Agent Store to sell digital goods or services',
+      parameters: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: 'Title of the listing'
+          },
+          description: {
+            type: 'string',
+            description: 'Description of what you are selling'
+          },
+          type: {
+            type: 'string',
+            enum: ['DIGITAL', 'SERVICE', 'SUBSCRIPTION', 'PHYSICAL'],
+            description: 'Type of listing',
+            default: 'DIGITAL'
+          },
+          priceUsdCents: {
+            type: 'number',
+            description: 'Price in USD cents (e.g., 1000 = $10.00)'
+          },
+          tags: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Tags for search'
+          },
+          category: {
+            type: 'string',
+            description: 'Category'
+          },
+          status: {
+            type: 'string',
+            enum: ['DRAFT', 'ACTIVE'],
+            description: 'Status (DRAFT = hidden, ACTIVE = visible)',
+            default: 'DRAFT'
+          }
+        },
+        required: ['title', 'description', 'priceUsdCents']
+      },
+
+      async execute({ title, description, type = 'DIGITAL', priceUsdCents, tags = [], category, status = 'DRAFT' }, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_create_listing',
+            arguments: { title, description, type, priceUsdCents, tags, category, status }
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+    },
+
+    /**
+     * Update a listing
+     */
+    amikonet_update_listing: {
+      description: 'Update an existing listing in your Agent Store',
+      parameters: {
+        type: 'object',
+        properties: {
+          listingId: {
+            type: 'string',
+            description: 'ID of the listing to update'
+          },
+          title: { type: 'string', description: 'New title' },
+          description: { type: 'string', description: 'New description' },
+          type: { type: 'string', enum: ['DIGITAL', 'SERVICE', 'SUBSCRIPTION', 'PHYSICAL'] },
+          priceUsdCents: { type: 'number', description: 'New price in USD cents' },
+          status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'SOLD', 'ARCHIVED'] }
+        },
+        required: ['listingId']
+      },
+
+      async execute(args, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_update_listing',
+            arguments: args
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+    },
+
+    /**
+     * Delete a listing
+     */
+    amikonet_delete_listing: {
+      description: 'Delete a listing from your Agent Store',
+      parameters: {
+        type: 'object',
+        properties: {
+          listingId: {
+            type: 'string',
+            description: 'ID of the listing to delete'
+          }
+        },
+        required: ['listingId']
+      },
+
+      async execute({ listingId }, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_delete_listing',
+            arguments: { listingId }
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+    },
+
+    /**
+     * List my listings
+     */
+    amikonet_list_my_listings: {
+      description: 'Get all listings you have created',
+      parameters: {
+        type: 'object',
+        properties: {
+          status: {
+            type: 'string',
+            enum: ['DRAFT', 'ACTIVE', 'SOLD', 'ARCHIVED'],
+            description: 'Filter by status'
+          },
+          limit: { type: 'number', default: 50 },
+          offset: { type: 'number', default: 0 }
+        }
+      },
+
+      async execute({ status, limit = 50, offset = 0 }, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_list_my_listings',
+            arguments: { status, limit, offset }
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+    },
+
+    /**
+     * Search listings
+     */
+    amikonet_search_listings: {
+      description: 'Search for listings in the marketplace',
+      parameters: {
+        type: 'object',
+        properties: {
+          search: { type: 'string', description: 'Search query' },
+          sellerHandle: { type: 'string', description: 'Filter by seller handle' },
+          category: { type: 'string', description: 'Filter by category' },
+          type: { type: 'string', enum: ['DIGITAL', 'SERVICE', 'SUBSCRIPTION', 'PHYSICAL'] },
+          limit: { type: 'number', default: 20 },
+          offset: { type: 'number', default: 0 }
+        }
+      },
+
+      async execute(args, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_search_listings',
+            arguments: args
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+    },
+
+    /**
+     * View a listing
+     */
+    amikonet_view_listing: {
+      description: 'Get details of a specific listing',
+      parameters: {
+        type: 'object',
+        properties: {
+          listingId: {
+            type: 'string',
+            description: 'ID of the listing to view'
+          }
+        },
+        required: ['listingId']
+      },
+
+      async execute({ listingId }, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_view_listing',
+            arguments: { listingId }
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+    },
+
+    /**
+     * Buy a listing
+     */
+    amikonet_buy_listing: {
+      description: 'Initiate a purchase for a listing. Returns X402 payment requirements.',
+      parameters: {
+        type: 'object',
+        properties: {
+          listingId: {
+            type: 'string',
+            description: 'ID of the listing to buy'
+          },
+          network: {
+            type: 'string',
+            enum: ['SOLANA', 'SOLANA_DEVNET', 'BASE', 'BASE_SEPOLIA'],
+            description: 'Payment network to use',
+            default: 'SOLANA'
+          }
+        },
+        required: ['listingId']
+      },
+
+      async execute({ listingId, network = 'SOLANA' }, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_buy_listing',
+            arguments: { listingId, network }
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+    },
+
+    /**
+     * Confirm a purchase
+     */
+    amikonet_confirm_purchase: {
+      description: 'Confirm a purchase with X402 payment proof',
+      parameters: {
+        type: 'object',
+        properties: {
+          orderId: {
+            type: 'string',
+            description: 'ID of the order to confirm'
+          },
+          paymentPayload: {
+            type: 'string',
+            description: 'Base64-encoded X402 payment payload'
+          }
+        },
+        required: ['orderId', 'paymentPayload']
+      },
+
+      async execute({ orderId, paymentPayload }, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_confirm_purchase',
+            arguments: { orderId, paymentPayload }
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+    },
+
+    /**
+     * List my purchases
+     */
+    amikonet_list_my_purchases: {
+      description: 'Get all orders where you are the buyer',
+      parameters: {
+        type: 'object',
+        properties: {
+          status: {
+            type: 'string',
+            enum: ['PENDING', 'PAID', 'DELIVERED', 'CANCELLED', 'DISPUTED'],
+            description: 'Filter by status'
+          },
+          limit: { type: 'number', default: 50 },
+          offset: { type: 'number', default: 0 }
+        }
+      },
+
+      async execute({ status, limit = 50, offset = 0 }, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_list_my_purchases',
+            arguments: { status, limit, offset }
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+    },
+
+    /**
+     * List my sales
+     */
+    amikonet_list_my_sales: {
+      description: 'Get all orders where you are the seller',
+      parameters: {
+        type: 'object',
+        properties: {
+          status: {
+            type: 'string',
+            enum: ['PENDING', 'PAID', 'DELIVERED', 'CANCELLED', 'DISPUTED'],
+            description: 'Filter by status'
+          },
+          limit: { type: 'number', default: 50 },
+          offset: { type: 'number', default: 0 }
+        }
+      },
+
+      async execute({ status, limit = 50, offset = 0 }, context) {
+        try {
+          const result = await context.mcpClient.callTool({
+            name: 'amikonet_list_my_sales',
+            arguments: { status, limit, offset }
+          });
+
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
     }
   }
 };
